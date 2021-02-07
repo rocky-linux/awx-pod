@@ -1,0 +1,35 @@
+---
+awx_awx_version: 16.0.0
+awx_awxweb_version: "{{ awx_awx_version }}"
+awx_awxtask_version: "{{ awx_awx_version }}"
+awx_awxweb_image: "{{ awx_awx_image | default('docker.io/ansible/awx:{}'.format(awx_awxweb_version)) }}"
+awx_awxtask_image: "{{ awx_awx_image | default('docker.io/ansible/awx:{}'.format(awx_awxtask_version)) }}"
+awx_postgres_image: docker.io/centos/postgresql-{{ awx_postgres_version }}-centos7
+awx_redis_image: docker.io/library/redis:latest
+
+# awx host
+awx_admin_user: admin
+awx_admin_password: password
+awx_server_email: 'root@localhost'
+awx_pod_name: awx
+awx_pod_label: awx
+awx_podman_dir: /tmp/awx
+awx_host_port: 80
+awx_host_ssl_port: 443
+awx_secret_key: ThisIsNotTheSecret!
+
+awx_pg_hostname: dbpg.rockylinux.org
+awx_pg_port: 5432
+awx_pg_database: awx
+awx_pg_username: awx
+awx_pg_password: awxpass
+
+awx_kubernetes_redis_config_mount_path: /usr/local/etc/redis/redis.conf
+
+# settings
+awx_task_mem_request: 2
+awx_task_cpu_request: 1500
+awx_automation_analytics_url: "https://rockylinux.org"
+awx_insights_url_base: "https://rockylinux.org"
+awx_insights_agent_mime: "application/example"
+awx_container_groups_image: "ansible/ansible-runner"
