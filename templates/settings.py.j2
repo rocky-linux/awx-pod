@@ -1,0 +1,81 @@
+import os
+import socket
+ADMINS = ()
+
+AWX_PROOT_ENABLED = False
+
+# Automatically deprovision pods that go offline
+AWX_AUTO_DEPROVISION_INSTANCES = True
+
+SYSTEM_TASK_ABS_CPU = {{ ((awx_task_cpu_request|int / 1000) * 4)|int }}
+SYSTEM_TASK_ABS_MEM = {{ ((awx_task_mem_request|int * 1024) / 100)|int }}
+
+TOWER_URL_BASE = "https://{{ awx_hostname | default(ansible_fqdn) }}:{{ awx_host_ssl_port }}"
+INSIGHTS_URL_BASE = "{{ awx_insights_url_base }}"
+INSIGHTS_AGENT_MIME = "{{ awx_insights_agent_mime }}"
+AUTOMATION_ANALYTICS_URL = "{{ awx_automation_analytics_url }}"
+
+#Autoprovisioning should replace this
+CLUSTER_HOST_ID = socket.gethostname()
+SYSTEM_UUID = os.environ.get('MY_POD_UID', '00000000-0000-0000-0000-000000000000')
+
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+REMOTE_HOST_HEADERS = ['HTTP_X_FORWARDED_FOR']
+
+STATIC_ROOT = '/var/lib/awx/public/static'
+PROJECTS_ROOT = '/var/lib/awx/projects'
+JOBOUTPUT_ROOT = '/var/lib/awx/job_status'
+SECRET_KEY = open('/etc/tower/SECRET_KEY', 'rb').read().strip()
+ALLOWED_HOSTS = ['*']
+INTERNAL_API_URL = 'http://127.0.0.1:8052'
+SERVER_EMAIL = '{{ awx_server_email }}'
+DEFAULT_FROM_EMAIL = 'webmaster@localhost'
+EMAIL_SUBJECT_PREFIX = '[AWX] '
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 25
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+EMAIL_USE_TLS = False
+
+LOGGING['handlers']['console'] = {
+    '()': 'logging.StreamHandler',
+    'level': 'DEBUG',
+    'formatter': 'simple',
+}
+
+LOGGING['loggers']['django.request']['handlers'] = ['console']
+LOGGING['loggers']['rest_framework.request']['handlers'] = ['console']
+LOGGING['loggers']['awx']['handlers'] = ['console', 'external_logger']
+LOGGING['loggers']['awx.main.commands.run_callback_receiver']['handlers'] = ['console']
+LOGGING['loggers']['awx.main.commands.inventory_import']['handlers'] = ['console']
+LOGGING['loggers']['awx.main.tasks']['handlers'] = ['console', 'external_logger']
+LOGGING['loggers']['awx.main.scheduler']['handlers'] = ['console', 'external_logger']
+LOGGING['loggers']['django_auth_ldap']['handlers'] = ['console']
+LOGGING['loggers']['social']['handlers'] = ['console']
+LOGGING['loggers']['system_tracking_migrations']['handlers'] = ['console']
+LOGGING['loggers']['rbac_migrations']['handlers'] = ['console']
+LOGGING['loggers']['awx.isolated.manager.playbooks']['handlers'] = ['console']
+LOGGING['handlers']['callback_receiver'] = {'class': 'logging.NullHandler'}
+LOGGING['handlers']['fact_receiver'] = {'class': 'logging.NullHandler'}
+LOGGING['handlers']['task_system'] = {'class': 'logging.NullHandler'}
+LOGGING['handlers']['tower_warnings'] = {'class': 'logging.NullHandler'}
+LOGGING['handlers']['rbac_migrations'] = {'class': 'logging.NullHandler'}
+LOGGING['handlers']['system_tracking_migrations'] = {'class': 'logging.NullHandler'}
+LOGGING['handlers']['management_playbooks'] = {'class': 'logging.NullHandler'}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'unix:/var/run/redis/redis.sock'
+    },
+}
+
+USE_X_FORWARDED_PORT = True
+
+AWX_CONTAINER_GROUP_DEFAULT_IMAGE = "{{ awx_container_groups_image }}"
+REDHAT_CANDLEPIN_HOST = "{{ candlepin_host  | default(omit) }}"
+REDHAT_CANDLEPIN_VERIFY = "{{ candlepin_verify | default(omit) }}"
+BROADCAST_WEBSOCKET_PORT = 8052
+BROADCAST_WEBSOCKET_PROTOCOL = 'http'

@@ -9,3 +9,6 @@ awx_container_image_list_external_postgresql:
   - "{{ awx_awxweb_image }}"
   - "{{ awx_awxtask_image }}"
 awx_container_image_list: "{{ awx_container_image_list_external_postgresql|list }}"
+cidpid_base: "{{ systemd_tempdir }}/%n-"
+cidfile: "{{ cidpid_base }}cid"
+pidfile: "{{ cidpid_base }}pid"

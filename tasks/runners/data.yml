@@ -1,0 +1,102 @@
+---
+# prep
+- name: Ensure our directories exist
+  file:
+    user: '1000'
+    group: '1000'
+    mode: '0700'
+    path: "{{ item }}"
+    state: directory
+    recurse: true
+  loop:
+    - "{{ awx_pod_yaml_dir }}"
+    - "{{ awx_podman_dir }}/data"
+    - "{{ awx_podman_dir }}/supervisor-socket"
+    - "{{ awx_podman_dir }}/rsyslog-socket"
+    - "{{ awx_podman_dir }}/rsyslog-dir"
+
+- name: Ensure redis socket
+  file:
+    user: '999'
+    group: '999'
+    mode: '0700'
+    path: "{{ awx_podman_dir }}/redis-socket"
+    state: directory
+
+- name: Generate broadcast websocket secret
+  set_fact:
+    awx_websocket_secret: "{{ lookup('password', '/dev/null', length=128) }}"
+  run_once: true
+  no_log: true
+
+- name: Deploy AWX configuration file
+  template:
+    src: awx.yml.j2
+    dest: "{{ awx_pod_yaml_path }}"
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Deploy AWX secret
+  copy:
+    content: "{{ awx_secret_key }}"
+    dest: "{{ awx_podman_dir }}/SECRET_FILE"
+    mode: '0600'
+    owner: '1000'
+    group: '1000'
+
+- name: Deploy redis.conf
+  copy:
+    src: redis.conf
+    dest: "{{ awx_podman_dir }}/redis.conf"
+    mode: '0600'
+    owner: '999'
+    group: '999'
+
+- name: Deploy nginx.conf template
+  template:
+    src: nginx.conf.j2
+    dest: "{{ awx_podman_dir }}/nginx.conf"
+    mode: '0600'
+    owner: '1000'
+    group: '1000'
+
+- name: Deploy credentials template
+  template:
+    src: credentials.py.j2
+    dest: "{{ awx_podman_dir }}/credentials.py"
+    mode: '0600'
+    owner: '1000'
+    group: '1000'
+
+- name: Deploy environment template
+  template:
+    src: environment.sh.j2
+    dest: "{{ awx_podman_dir }}/environment.sh"
+    mode: '0600'
+    owner: '1000'
+    group: '1000'
+
+- name: Deploy settings template
+  template:
+    src: settings.py.j2
+    dest: "{{ awx_podman_dir }}/settings.py"
+    mode: '0600'
+    owner: '1000'
+    group: '1000'
+
+- name: Copy SSL Certificate
+  copy:
+    src: "{{ awx_host_ssl_certificate }}"
+    dest: "{{ awx_podman_dir }}/awxweb.pem"
+    mode: '0600'
+    owner: '1000'
+    group: '1000'
+
+- name: Copy SSL Certificate Key
+  copy:
+    src: "{{ awx_host_ssl_certificate_key }}"
+    dest: "{{ awx_podman_dir }}/awxweb.key"
+    mode: '0600'
+    owner: '1000'
+    group: '1000'

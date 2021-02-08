@@ -1,10 +1,9 @@
 ---
-awx_awx_version: 16.0.0
+awx_awx_version: 17.0.1
 awx_awxweb_version: "{{ awx_awx_version }}"
 awx_awxtask_version: "{{ awx_awx_version }}"
 awx_awxweb_image: "{{ awx_awx_image | default('docker.io/ansible/awx:{}'.format(awx_awxweb_version)) }}"
 awx_awxtask_image: "{{ awx_awx_image | default('docker.io/ansible/awx:{}'.format(awx_awxtask_version)) }}"
-awx_postgres_image: docker.io/centos/postgresql-{{ awx_postgres_version }}-centos7
 awx_redis_image: docker.io/library/redis:latest
 
 # awx host
@@ -13,10 +12,11 @@ awx_admin_password: password
 awx_server_email: 'root@localhost'
 awx_pod_name: awx
 awx_pod_label: awx
-awx_podman_dir: /tmp/awx
+awx_podman_dir: "/etc/awx"
 awx_host_port: 80
 awx_host_ssl_port: 443
 awx_secret_key: ThisIsNotTheSecret!
+awx_host_ssl_ca_trust_file: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
 
 awx_pg_hostname: dbpg.rockylinux.org
 awx_pg_port: 5432
@@ -33,3 +33,30 @@ awx_automation_analytics_url: "https://rockylinux.org"
 awx_insights_url_base: "https://rockylinux.org"
 awx_insights_agent_mime: "application/example"
 awx_container_groups_image: "ansible/ansible-runner"
+
+# pod
+awxpod_packages:
+  - podman
+  - fuse-overlayfs
+  - slirp4netns
+  - uidmap
+
+# state can be running or absent
+container_state: running
+
+# systemd restart policy
+container_restart: on-failure
+service_files_dir: /etc/systemd/system
+systemd_scope: system
+systemd_timeoutstartsec: 15
+systemd_restartsec: 30
+systemd_tempdir: "/tmp"
+container_run_as_user: ansible
+container_run_as_group: ansible
+container_stop_timeout: 15
+
+# systemd service name
+service_name: "{{ container_name }}-container-pod-{{ container_run_as_user }}.service"
+
+# to sepped up you can disable always checking if podman is installed.
+skip_podman_install: true

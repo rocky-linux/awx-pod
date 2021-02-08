@@ -1,0 +1,33 @@
+---
+# awx-pod
+- name: Install packages
+  yum:
+    name: "{{ awxpod_packages }}"
+    state: latest
+  tags:
+    - packages
+
+- name: Don't run if certificates aren't defined
+  assert:
+    that:
+      - awx_host_ssl_certificate     | mandatory
+      - awx_host_ssl_certificate_key | mandatory
+    success_msg: "Certificates defined"
+    fail_msg: "Certificates not defined"
+
+- name: Set container ports
+  set_fact:
+    awx_container_firewall_ports:
+      - "{{ awx_host_port }}/tcp"
+      - "{{ awx_host_ssl_port }}/tcp"
+
+- name: Prepare the AWX Pieces
+  import_tasks: runners/data.yml
+
+- name: Prepare the podman pieces
+  import_tasks: runners/systemd.yml
+  vars:
+    container_name: "{{ awx_pod_name }}"
+    container_pod_yaml: "{{ awx_pod_yaml_path }}"
+    container_image_list: "{{ awx_container_image_list }}"
+    container_firewall_ports: "{{ awx_container_firewall_ports }}"

@@ -1,0 +1,13 @@
+---
+# Clean up time
+- name: "remove AWX configuration file: {{ awx_pod_yaml_path }}"
+  file:
+    path: "{{ awx_pod_yaml_path }}"
+    state: absent
+  when: container_state == 'absent'
+
+- name: "remove awx config file directory: {{ awx_podman_dir }}"
+  file:
+    path: "{{ awx_podman_dir }}/"
+    state: absent
+  when: container_state == 'absent'

@@ -1,0 +1,220 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: {{ awx_pod_label }}
+  name: {{ awx_pod_name }}
+spec:
+  #
+  # define exported volumes for permanent data
+  #
+  volumes:
+  - name: supervisor-socket
+    hostPath:
+      path: {{ awx_podman_dir }}/supervisor-socket
+      type: Directory
+  - name: rsyslog-socket
+    hostPath:
+      path: {{ awx_podman_dir }}/rsyslog-socket
+      type: Directory
+  - name: rsyslog-dir
+    hostPath:
+      path: {{ awx_podman_dir }}/rsyslog-dir
+      type: Directory
+  - name: awx-data-volume
+    hostPath:
+      path: {{ awx_podman_dir }}/data
+      type: Directory
+  - name: redis-volume
+    hostPath:
+      path: {{ awx_podman_dir }}/redis-socket
+      type: Directory
+  - name: ca_trust_file
+    hostPath:
+      path: {{ awx_host_ssl_ca_trust_file }}
+      type: File
+  - name: awx-secret
+    hostPath:
+      path: {{ awx_podman_dir }}/SECRET_FILE
+      type: File
+  - name: redis-config
+    hostPath:
+      path: {{ awx_podman_dir }}/redis.conf
+      type: File
+  - name: tower-settings-py
+    hostPath:
+      path: {{ awx_podman_dir }}/settings.py
+      type: File
+  - name: nginx-config
+    hostPath:
+      path: {{ awx_podman_dir }}/nginx.conf
+      type: File
+  - name: environment-sh
+    hostPath:
+      path: {{ awx_podman_dir }}/environment.sh
+      type: File
+  - name: credentials-py
+    hostPath:
+      path: {{ awx_podman_dir }}/credentials.py
+      type: File
+  - name: ssl_certificate
+    hostPath:
+      path: {{ awx_podman_dir }}/awxweb.pem
+      type: File
+  - name: ssl_certificate_key
+    hostPath:
+      path: {{ awx_podman_dir }}/awxweb.key
+      type: File
+  containers:
+  #
+  # awx-web container
+  #
+  - command:
+    - /bin/sh
+    - -c
+    - /usr/bin/launch_awx.sh
+    env:
+    - name: AWX_ADMIN_USER
+      value: {{ awx_admin_user }}
+    - name: AWX_ADMIN_PASSWORD
+      value: {{ awx_admin_password }}
+    - name: HOSTNAME
+      value: {{ awx_pod_name }}
+    - name: DATABASE_NAME
+      value: {{ awx_pg_database }}
+    - name: DATABASE_USER
+      value: {{ awx_pg_username }}
+    - name: DATABASE_PASSWORD
+      value: {{ awx_pg_password }}
+    - name: DATABASE_PORT
+      value: {{ awx_pg_port }}
+    - name: DATABASE_HOST
+      value: {{ awx_pg_hostname }}
+    image: {{ awx_awxweb_image }}
+    name: {{ awx_pod_name }}_awxweb
+    workingDir: /var/lib/awx
+    volumeMounts:
+    - name: supervisor-socket
+      mountPath: /var/run/supervisor:z
+    - name: rsyslog-socket
+      mountPath: /var/run/awx-rsyslog:z
+    - name: rsyslog-dir
+      mountPath: /var/lib/awx/rsyslog:z
+    - mountPath: /var/lib/awx/projects:z
+      name: awx-data-volume
+    - mountPath: /var/run/redis:z
+      name: redis-volume
+    - mountPath: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:z
+      name: ca_trust_file
+      readOnly: true
+    - mountPath: /etc/tower/SECRET_KEY:z
+      name: awx-secret
+      readOnly: true
+    - mountPath: /etc/tower/settings.py:z
+      name: tower-settings-py
+      readOnly: true
+    - mountPath: /etc/nginx/nginx.conf:z
+      name: nginx-config
+      readOnly: true
+    - mountPath: /etc/tower/conf.d/environment.sh:z
+      name: environment-sh
+      readOnly: true
+    - mountPath: /etc/tower/conf.d/credentials.py:z
+      name: credentials-py
+      readOnly: true
+    - mountPath: /etc/nginx/awxweb.pem:z
+      name: ssl_certificate
+      readOnly: true
+    - mountPath: /etc/nginx/awxweb.key:z
+      name: ssl_certificate_key
+      readOnly: true
+    ports:
+      - containerPort: 8052
+        hostPort: {{ awx_host_port }}
+        protocol: TCP
+      - containerPort: 8053
+        hostPort: {{ awx_host_ssl_port }}
+        protocol: TCP
+  #
+  # awx-task container
+  #
+  - command:
+    - /bin/sh
+    - -c
+    - /usr/bin/launch_awx_task.sh
+    env:
+    - name: AWX_ADMIN_USER
+      value: {{ awx_admin_user }}
+    - name: AWX_ADMIN_PASSWORD
+      value: {{ awx_admin_password }}
+    - name: HOSTNAME
+      value: {{ awx_pod_name }}
+    - name: DATABASE_NAME
+      value: {{ awx_pg_database }}
+    - name: DATABASE_USER
+      value: {{ awx_pg_username }}
+    - name: DATABASE_PASSWORD
+      value: {{ awx_pg_password }}
+    - name: DATABASE_PORT
+      value: {{ awx_pg_port }}
+    - name: DATABASE_HOST
+      value: {{ awx_pg_hostname }}
+    image: {{ awx_awxtask_image }}
+    name: {{ awx_pod_name }}_awxtask
+    workingDir: /var/lib/awx
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - name: supervisor-socket
+      mountPath: /var/run/supervisor:z
+    - name: rsyslog-socket
+      mountPath: /var/run/awx-rsyslog:z
+    - name: rsyslog-dir
+      mountPath: /var/lib/awx/rsyslog:z
+    - mountPath: /var/lib/awx/projects:z
+      name: awx-data-volume
+    - mountPath: /var/run/redis:z
+      name: redis-volume
+    - mountPath: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:z
+      name: ca_trust_file
+      readOnly: true
+    - mountPath: /etc/tower/SECRET_KEY:z
+      name: awx-secret
+      readOnly: true
+    - mountPath: /etc/tower/settings.py:z
+      name: tower-settings-py
+      readOnly: true
+    - mountPath: /etc/nginx/nginx.conf:z
+      name: nginx-config
+      readOnly: true
+    - mountPath: /etc/tower/conf.d/environment.sh:z
+      name: environment-sh
+      readOnly: true
+    - mountPath: /etc/tower/conf.d/credentials.py:z
+      name: credentials-py
+      readOnly: true
+    - mountPath: /etc/nginx/awxweb.pem:z
+      name: ssl_certificate
+      readOnly: true
+    - mountPath: /etc/nginx/awxweb.key:z
+      name: ssl_certificate_key
+      readOnly: true
+  #
+  # redis container
+  #
+  - command:
+    - redis-server
+    - {{ awx_kubernetes_redis_config_mount_path }}
+    workingDir: /data
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities: {}
+      privileged: false
+      readOnlyRootFilesystem: false
+    volumeMounts:
+    - mountPath: /var/run/redis:z
+      name: redis-volume
+    - mountPath: {{ awx_kubernetes_redis_config_mount_path }}:z
+      name: redis-config
+    image: {{ awx_redis_image }}
+    name: {{ awx_pod_name }}_redis
